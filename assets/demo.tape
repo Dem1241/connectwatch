@@ -11,33 +11,32 @@ Set Theme "Catppuccin Mocha"
 Type "connectwatch --demo"
 Sleep 500ms
 Enter
-Sleep 3s
-
-Tab
-Sleep 2.5s
-Tab
-Sleep 2s
-Tab
-Sleep 1.5s
-
-Down
-Sleep 2s
-Type "R"
-Sleep 1.5s
-Type "y"
-Sleep 3s
-
-Up
-Sleep 1.5s
-Type "R"
-Sleep 1s
-Type "y"
 Sleep 4s
-Sleep 10s
 
-Type "/sink"
+# the trace and the config of the failed debezium task
+Tab
+Sleep 3s
+Tab
 Sleep 2.5s
+Tab
+Sleep 1.5s
+
+# restarting it doesn't help, the record is still too large
+Type "R"
+Sleep 1.5s
+Type "y"
+Sleep 14s
+
+# the s3 sink only hit one bad record, so a restart does
+Type "/s3"
+Sleep 1s
+Enter
+Sleep 1s
+Type "R"
+Sleep 1.5s
+Type "y"
+Sleep 3s
 Escape
-Sleep 2s
+Sleep 4s
 
 Type "q"

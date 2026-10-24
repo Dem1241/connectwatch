@@ -152,12 +152,12 @@ func (c *Cluster) At(now time.Time) connect.Snapshot {
 				}
 			}
 		case "es-sink-search":
-			// elasticsearch drops out for a while every half minute and
+			// elasticsearch drops out for a while every ten seconds and
 			// something restarts the task once it is back
 			if k.State != connect.Running {
 				continue
 			}
-			if int(now.Sub(c.start).Seconds())%30 < 10 && now.Sub(c.start) > 5*time.Second {
+			if int(now.Sub(c.start).Seconds())%10 < 3 && now.Sub(c.start) > 5*time.Second {
 				k.Tasks[1].State, k.Tasks[1].Trace = connect.Failed, refused
 			} else {
 				k.Tasks[1].State, k.Tasks[1].Trace = connect.Running, ""

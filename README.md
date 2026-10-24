@@ -10,7 +10,7 @@ see which task failed and why, without digging through worker logs, and restart 
 [![Kafka Connect](https://img.shields.io/badge/kafka%20connect-3.7%20to%204.1-313244?style=flat-square&logo=apachekafka&logoColor=f5c2e7)](#what-it-understands)
 [![License](https://img.shields.io/badge/license-MIT-f5c2e7?style=flat-square)](LICENSE)
 
-<img src="assets/connectors.png" alt="connectwatch showing six connectors, a debezium postgres connector with a failed task selected and its RecordTooLargeException explained" width="860">
+<img src="assets/demo.gif" alt="connectwatch running its demo: six connectors, a debezium task that failed with a RecordTooLargeException, its trace and config, a restart that fails again, and an s3 sink fixed by a restart" width="860">
 
 </div>
 
