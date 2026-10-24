@@ -1,0 +1,71 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kafka: [3.7.0, 3.9.0, 4.1.0]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: docker network create kc
+      # a single kraft broker, reachable as kafka:9092 from the connect container
+      - run: >-
+          docker run -d --name kafka --network kc
+          -e KAFKA_NODE_ID=1 -e KAFKA_PROCESS_ROLES=broker,controller
+          -e KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+          -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+          -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+          -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+          -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+          -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+          -e KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+          -e KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+          apache/kafka:${{ matrix.kafka }}
+      # a plain distributed worker from the same image, the mirror connectors are on its classpath
+      - run: |
+          cat > connect.properties <<'PROPS'
+          bootstrap.servers=kafka:9092
+          group.id=connectwatch-ci
+          listeners=http://0.0.0.0:8083
+          key.converter=org.apache.kafka.connect.json.JsonConverter
+          value.converter=org.apache.kafka.connect.json.JsonConverter
+          config.storage.topic=connect-configs
+          offset.storage.topic=connect-offsets
+          status.storage.topic=connect-status
+          config.storage.replication.factor=1
+          offset.storage.replication.factor=1
+          status.storage.replication.factor=1
+          PROPS
+          docker run -d --name connect --network kc -p 8083:8083 -v "$PWD/connect.properties:/tmp/connect.properties:ro" \
+            --entrypoint /opt/kafka/bin/connect-distributed.sh apache/kafka:${{ matrix.kafka }} /tmp/connect.properties
+      - run: timeout 180 bash -c 'until curl -sf localhost:8083/connectors; do sleep 2; done'
+      - run: go vet ./...
+      - run: go test -race ./...
+        env:
+          CONNECTWATCH_TEST_URL: http://localhost:8083
+          CONNECTWATCH_TEST_BOOTSTRAP: kafka:9092
+      - if: failure()
+        run: docker logs connect 2>&1 | tail -n 80
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
