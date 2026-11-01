@@ -36,11 +36,12 @@ replication slot a stuck debezium connector leaves behind, and
 ## try it
 
 ```sh
-go install github.com/Dem1241/connectwatch@latest
+brew install Dem1241/tap/connectwatch
 connectwatch --demo
 ```
 
-or grab a binary for linux, macos or windows from the
+or `go install github.com/Dem1241/connectwatch@latest`, or grab a binary for
+linux, macos or windows from the
 [releases](https://github.com/Dem1241/connectwatch/releases).
 
 `--demo` watches a pretend cluster: a debezium task that fails again every
